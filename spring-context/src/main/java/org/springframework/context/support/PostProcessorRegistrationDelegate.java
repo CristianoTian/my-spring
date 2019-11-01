@@ -84,6 +84,16 @@ final class PostProcessorRegistrationDelegate {
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
+			/**
+			 * 这个地方得到一个BeanFactoryPostProcessor,因为是spring默认在最开始自己注册的
+			 * 为什么要在最开始注册这个bean？
+			 * 因为spring工厂需要去解析、扫描等功能
+			 * 而这些功能都是需要在spring工厂初始化完成之前去执行
+			 * 要么在工厂最开始的时候、要么在工程初始化之中，反正不能在之后
+			 *
+			 * 所以这里spring在一开始的时候就注册了一个BeanFactoryPostProcessor,用来插手springFactory的实例化过程
+			 * 此处断点可知这个类叫做：ConfigurationAnnotationProcessor
+			 */
 			for (String ppName : postProcessorNames) {
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
@@ -92,7 +102,18 @@ final class PostProcessorRegistrationDelegate {
 			}
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
+			/**
+			 * 这个方法最重要
+			 * 开始循环调用BeanDefinitionRegistryPostProcessor
+			 *
+			 * 其中有一个spring内部的BeanDefinitionRegistryPostProcessors——>ConfigurationClassPostProcessor
+			 * 处理@Configuration/@Component等注解，扫描、注册包下的类
+			 * 处理@Import/@ImportResource/@Bean等...
+			 */
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
+			/**
+			 * 清除临时变量，后面还要用这个变量
+			 */
 			currentRegistryProcessors.clear();
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
@@ -272,6 +293,11 @@ final class PostProcessorRegistrationDelegate {
 			Collection<? extends BeanDefinitionRegistryPostProcessor> postProcessors, BeanDefinitionRegistry registry) {
 
 		for (BeanDefinitionRegistryPostProcessor postProcessor : postProcessors) {
+			/**
+			 * 简单点
+			 * 这里默认其实只有一个BeanDefinitionRegistryPostProcessor——>就是ConfigurationClassPostProcessor
+			 * 所以调用ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(registry)
+			 */
 			postProcessor.postProcessBeanDefinitionRegistry(registry);
 		}
 	}

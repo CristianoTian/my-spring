@@ -267,7 +267,18 @@ public class AnnotatedBeanDefinitionReader {
 		abd.setScope(scopeMetadata.getScopeName());
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
 
+		/**
+		 * 处理类当中的通用注解
+		 * 分析源码可以知道他主要处理
+		 * Lazy DependOn Primary Role等注解
+		 * 处理完后 processCommonDefinitionAnnotations 依然是把他添加到数据结构当中去
+		 */
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
+
+		/**
+		 * 如果在向容器注册注解bean定义时，使用了额外的限定符注解
+		 * 依次判断了注解当中是否包含了Primary、Lazy、qualifier
+		 */
 		if (qualifiers != null) {
 			for (Class<? extends Annotation> qualifier : qualifiers) {
 				if (Primary.class == qualifier) {
@@ -281,14 +292,29 @@ public class AnnotatedBeanDefinitionReader {
 				}
 			}
 		}
+
+
+		/**
+		 * 自定义注解
+		 */
 		if (customizers != null) {
 			for (BeanDefinitionCustomizer customizer : customizers) {
 				customizer.customize(abd);
 			}
 		}
 
+		/**
+		 * 这个BeanDefinitionHolder也是一个数据结构
+		 * 存放BeanDefinition
+		 */
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+
+		/**
+		 * 把上述这个数据结构注册给registry
+		 * registry就是AnnotationConfigApplicationContext
+		 *
+		 * */
 		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
 	}
 
