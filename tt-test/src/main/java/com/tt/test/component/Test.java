@@ -1,4 +1,4 @@
-package com.tt.test;
+package com.tt.test.component;
 
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
